@@ -4,27 +4,30 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+var session = require('express-session');
+var fileStore = require('session-file-store')(session);
+
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+var chatRouter = require('./routes/chat');
 
 var app = express();
 
+app.use(session({
+  secret: 'keyboard cat',
+  resave: false,
+  saveUninitialized: true,
+  store: new fileStore()
+}));
+
 const MongoClient = require('mongodb').MongoClient;
-const assert = require('assert');
- 
-// Connection URL
-const url = 'mongodb://localhost:27017';
- 
-// Database Name
-const dbName = 'tictactoe';
- 
-// Use connect method to connect to the server
-MongoClient.connect(url, function(err, client) {
-  assert.equal(null, err);
-  console.log("Connected successfully to server");
- 
-  const db = client.db(dbName);
+// const uri = "mongodb+srv://<id>:<password>@cluster0-fj54l.mongodb.net/test?retryWrites=true&w=majority";
+const uri = "mongodb://localhost:27017";
+const client = new MongoClient(uri, { useNewUrlParser: true });
+client.connect(err => {
+  const db = client.db("tictactoe");
   app.set('database', db);
+  console.log("Connected successfully to server");
 });
 
 // view engine setup
@@ -39,6 +42,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/chat', chatRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
